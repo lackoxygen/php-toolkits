@@ -22,7 +22,7 @@ class Collection implements ArrayAccess
      */
     public function __construct($items = [])
     {
-        $this->items = $this->getArrayableItems($items);
+        $this->items = $this->getMixedDataToArray($items);
     }
 
     /**
@@ -79,7 +79,7 @@ class Collection implements ArrayAccess
      * @param $items
      * @return array
      */
-    protected function getArrayableItems($items): array
+    protected function getMixedDataToArray($items): array
     {
         if (is_array($items)) {
             return $items;
@@ -102,7 +102,7 @@ class Collection implements ArrayAccess
      */
     public function diff($items): Collection
     {
-        return new static(array_diff($this->items, $this->getArrayableItems($items)));
+        return new static(array_diff($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -114,7 +114,7 @@ class Collection implements ArrayAccess
      */
     public function diffUsing($items, callable $callback): Collection
     {
-        return new static(array_udiff($this->items, $this->getArrayableItems($items), $callback));
+        return new static(array_udiff($this->items, $this->mixedDataToArray($items), $callback));
     }
 
     /**
@@ -125,7 +125,7 @@ class Collection implements ArrayAccess
      */
     public function diffAssoc($items): Collection
     {
-        return new static(array_diff_assoc($this->items, $this->getArrayableItems($items)));
+        return new static(array_diff_assoc($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -137,7 +137,7 @@ class Collection implements ArrayAccess
      */
     public function diffAssocUsing($items, callable $callback): Collection
     {
-        return new static(array_diff_uassoc($this->items, $this->getArrayableItems($items), $callback));
+        return new static(array_diff_uassoc($this->items, $this->getMixedDataToArray($items), $callback));
     }
 
     /**
@@ -148,7 +148,7 @@ class Collection implements ArrayAccess
      */
     public function diffKeys($items): Collection
     {
-        return new static(array_diff_key($this->items, $this->getArrayableItems($items)));
+        return new static(array_diff_key($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -160,7 +160,7 @@ class Collection implements ArrayAccess
      */
     public function diffKeysUsing($items, callable $callback): Collection
     {
-        return new static(array_diff_ukey($this->items, $this->getArrayableItems($items), $callback));
+        return new static(array_diff_ukey($this->items, $this->getMixedDataToArray($items), $callback));
     }
 
 
@@ -340,7 +340,7 @@ class Collection implements ArrayAccess
      */
     public function intersect($items): Collection
     {
-        return new static(array_intersect($this->items, $this->getArrayableItems($items)));
+        return new static(array_intersect($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -352,7 +352,7 @@ class Collection implements ArrayAccess
     public function intersectByKeys($items): Collection
     {
         return new static(array_intersect_key(
-            $this->items, $this->getArrayableItems($items)
+            $this->items, $this->getMixedDataToArray($items)
         ));
     }
 
@@ -515,7 +515,7 @@ class Collection implements ArrayAccess
      */
     public function merge($items): Collection
     {
-        return new static(array_merge($this->items, $this->getArrayableItems($items)));
+        return new static(array_merge($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -526,7 +526,7 @@ class Collection implements ArrayAccess
      */
     public function mergeRecursive($items): Collection
     {
-        return new static(array_merge_recursive($this->items, $this->getArrayableItems($items)));
+        return new static(array_merge_recursive($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -537,7 +537,7 @@ class Collection implements ArrayAccess
      */
     public function combine($values): Collection
     {
-        return new static(array_combine($this->all(), $this->getArrayableItems($values)));
+        return new static(array_combine($this->all(), $this->getMixedDataToArray($values)));
     }
 
     /**
@@ -548,7 +548,7 @@ class Collection implements ArrayAccess
      */
     public function union($items): Collection
     {
-        return new static($this->items + $this->getArrayableItems($items));
+        return new static($this->items + $this->getMixedDataToArray($items));
     }
 
     /**
@@ -716,7 +716,7 @@ class Collection implements ArrayAccess
      */
     public function replace($items): Collection
     {
-        return new static(array_replace($this->items, $this->getArrayableItems($items)));
+        return new static(array_replace($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -727,7 +727,7 @@ class Collection implements ArrayAccess
      */
     public function replaceRecursive($items): Collection
     {
-        return new static(array_replace_recursive($this->items, $this->getArrayableItems($items)));
+        return new static(array_replace_recursive($this->items, $this->getMixedDataToArray($items)));
     }
 
     /**
@@ -982,7 +982,7 @@ class Collection implements ArrayAccess
             return new static(array_splice($this->items, $offset));
         }
 
-        return new static(array_splice($this->items, $offset, $length, $this->getArrayableItems($replacement)));
+        return new static(array_splice($this->items, $offset, $length, $this->getMixedDataToArray($replacement)));
     }
 
     /**
@@ -1045,7 +1045,7 @@ class Collection implements ArrayAccess
     public function zip($items)
     {
         $arrayableItems = array_map(function ($items) {
-            return $this->getArrayableItems($items);
+            return $this->getMixedDataToArray($items);
         }, func_get_args());
 
         $params = array_merge([function () {
