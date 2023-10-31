@@ -1,10 +1,10 @@
 {
-    "name": "lackoxygen/toolkit",
+    "name": "lackoxygen/toolkits",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Lackoxygen\\Toolkit\\": "src/"
+            "Lackoxygen\\Toolkits\\": "src/"
         }
     },
     "authors": [

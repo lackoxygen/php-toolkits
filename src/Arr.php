@@ -1,6 +1,8 @@
 <?php
 
-namespace Lackoxygen\Toolkit;
+namespace Lackoxygen\Toolkits;
+
+use Illuminate\Support\Collection;
 
 class Arr
 {
@@ -30,29 +32,6 @@ class Arr
         }
 
         return $array;
-    }
-
-    /**
-     * Collapse an array of arrays into a single array.
-     *
-     * @param iterable $array
-     * @return array
-     */
-    public static function collapse($array): array
-    {
-        $results = [];
-
-        foreach ($array as $values) {
-            if ($values instanceof Collection) {
-                $values = $values->all();
-            } elseif (!is_array($values)) {
-                continue;
-            }
-
-            $results[] = $values;
-        }
-
-        return array_merge([], ...$results);
     }
 
     /**
@@ -165,16 +144,16 @@ class Arr
     /**
      * Return the first element in an array passing a given truth test.
      *
-     * @param iterable $array
+     * @param array $array
      * @param callable|null $callback
      * @param mixed $default
      * @return mixed
      */
-    public static function first($array, callable $callback = null, $default = null)
+    public static function first(array $array, callable $callback = null, $default = null)
     {
         if (is_null($callback)) {
             if (empty($array)) {
-                return value($default);
+                return $default;
             }
 
             foreach ($array as $item) {
@@ -188,7 +167,7 @@ class Arr
             }
         }
 
-        return value($default);
+        return $default;
     }
 
     /**
@@ -202,7 +181,7 @@ class Arr
     public static function last(array $array, callable $callback = null, $default = null)
     {
         if (is_null($callback)) {
-            return empty($array) ? value($default) : end($array);
+            return empty($array) ? $default : end($array);
         }
 
         return static::first(array_reverse($array, true), $callback, $default);
@@ -220,8 +199,6 @@ class Arr
         $result = [];
 
         foreach ($array as $item) {
-            $item = $item instanceof Collection ? $item->all() : $item;
-
             if (!is_array($item)) {
                 $result[] = $item;
             } else {
@@ -293,7 +270,7 @@ class Arr
     public static function get($array, $key, $default = null)
     {
         if (!static::accessible($array)) {
-            return value($default);
+            return $default;
         }
 
         if (is_null($key)) {
@@ -305,14 +282,14 @@ class Arr
         }
 
         if (strpos($key, '.') === false) {
-            return $array[$key] ?? value($default);
+            return $array[$key] ?? $default;
         }
 
         foreach (explode('.', $key) as $segment) {
             if (static::accessible($array) && static::exists($array, $segment)) {
                 $array = $array[$segment];
             } else {
-                return value($default);
+                return $default;
             }
         }
 
@@ -326,7 +303,7 @@ class Arr
      * @param string|array $keys
      * @return bool
      */
-    public static function has($array, $keys)
+    public static function has($array, $keys): bool
     {
         $keys = (array)$keys;
 
@@ -437,10 +414,10 @@ class Arr
     {
         $results = [];
 
-        [$value, $key] = static::explodePluckParameters($value, $key);
+        list($value, $key) = static::explodePluckParameters($value, $key);
 
         foreach ($array as $item) {
-            $itemValue = data_get($item, $value);
+            $itemValue = static::get($item, $value);
 
             // If the key is "null", we will just append the value to the array and keep
             // looping. Otherwise we will key the array using the value of the key we
@@ -448,7 +425,7 @@ class Arr
             if (is_null($key)) {
                 $results[] = $itemValue;
             } else {
-                $itemKey = data_get($item, $key);
+                $itemKey = static::get($item, $key);
 
                 if (is_object($itemKey) && method_exists($itemKey, '__toString')) {
                     $itemKey = (string)$itemKey;
@@ -632,18 +609,6 @@ class Arr
     }
 
     /**
-     * Sort the array using the given callback or "dot" notation.
-     *
-     * @param array $array
-     * @param callable|array|string|null $callback
-     * @return array
-     */
-    public static function sort(array $array, $callback = null): array
-    {
-        return Collection::make($array)->sortBy($callback)->all();
-    }
-
-    /**
      * Recursively sort an array by keys and values.
      *
      * @param array $array
@@ -702,7 +667,7 @@ class Arr
      * @param callable $callback
      * @return array
      */
-    public static function where(array $array, callable $callback): array
+    public static function filter(array $array, callable $callback = null): array
     {
         return array_filter($array, $callback, ARRAY_FILTER_USE_BOTH);
     }
@@ -713,9 +678,9 @@ class Arr
      * @param array $array
      * @return array
      */
-    public static function whereNotNull(array $array): array
+    public static function filterNull(array $array): array
     {
-        return static::where($array, function ($value) {
+        return static::filter($array, function ($value) {
             return !is_null($value);
         });
     }
@@ -733,5 +698,28 @@ class Arr
         }
 
         return is_array($value) ? $value : [$value];
+    }
+
+    /**
+     * Collapse an array of arrays into a single array.
+     *
+     * @param  iterable  $array
+     * @return array
+     */
+    public static function collapse($array): array
+    {
+        $results = [];
+
+        foreach ($array as $values) {
+            if ($values instanceof Collection) {
+                $values = $values->all();
+            } elseif (! is_array($values)) {
+                continue;
+            }
+
+            $results[] = $values;
+        }
+
+        return array_merge([], ...$results);
     }
 }

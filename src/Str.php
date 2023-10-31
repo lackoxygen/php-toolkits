@@ -1,6 +1,6 @@
 <?php
 
-namespace Lackoxygen\Toolkit;
+namespace Lackoxygen\Toolkits;
 
 class Str
 {
@@ -362,22 +362,24 @@ class Str
         return $matches[1] ?? $matches[0];
     }
 
+
     /**
      * Get the string matching the given pattern.
      *
-     * @param string $pattern
-     * @param string $subject
-     * @return \Illuminate\Support\Collection
+     * @param $pattern
+     * @param $subject
+     * @return array|string[]
      */
-    public static function matchAll($pattern, $subject)
+    public static function matchAll($pattern, $subject): array
     {
         preg_match_all($pattern, $subject, $matches);
 
         if (empty($matches[0])) {
-            return collect();
+            return [];
         }
 
-        return collect($matches[1] ?? $matches[0]);
+
+        return $matches[1] ?? $matches[0];
     }
 
     /**
