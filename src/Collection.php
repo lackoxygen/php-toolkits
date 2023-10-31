@@ -89,6 +89,11 @@ class Collection implements ArrayAccess
             return iterator_to_array($items);
         } elseif ($items instanceof \Serializable) {
             return (array)unserialize($items);
+        } elseif (is_string($items)) {
+            $items = json_decode($items, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $items;
+            }
         }
 
         return (array)$items;
