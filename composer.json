@@ -1,0 +1,21 @@
+{
+    "name": "lackoxygen/toolkit",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Lackoxygen\\Toolkit\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "lackoxygen",
+            "email": "jingze666@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "ext-mbstring": "*",
+        "ext-ctype": "*"
+    }
+}
