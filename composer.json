@@ -5,7 +5,10 @@
     "autoload": {
         "psr-4": {
             "Lackoxygen\\Toolkits\\": "src/"
-        }
+        },
+        "files": [
+            "src/functions.php"
+        ]
     },
     "authors": [
         {
