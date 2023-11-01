@@ -358,7 +358,8 @@ class Collection implements ArrayAccess, Countable
     public function intersectByKeys($items): Collection
     {
         return new static(array_intersect_key(
-            $this->items, $this->getArrayFromMixed($items)
+            $this->items,
+            $this->getArrayFromMixed($items)
         ));
     }
 
@@ -611,7 +612,7 @@ class Collection implements ArrayAccess, Countable
         }
 
         if ($this->isEmpty()) {
-            return new static;
+            return new static();
         }
 
         $results = [];
@@ -781,7 +782,7 @@ class Collection implements ArrayAccess, Countable
         }
 
         if ($this->isEmpty()) {
-            return new static;
+            return new static();
         }
 
         $results = [];
@@ -839,10 +840,10 @@ class Collection implements ArrayAccess, Countable
     public function split(int $numberOfGroups): Collection
     {
         if ($this->isEmpty()) {
-            return new static;
+            return new static();
         }
 
-        $groups = new static;
+        $groups = new static();
 
         $groupSize = floor($this->count() / $numberOfGroups);
 
@@ -887,7 +888,7 @@ class Collection implements ArrayAccess, Countable
     public function chunk(int $size): Collection
     {
         if ($size <= 0) {
-            return new static;
+            return new static();
         }
 
         $chunks = [];
@@ -1389,7 +1390,8 @@ class Collection implements ArrayAccess, Countable
             if (!is_array($result)) {
                 throw new \UnexpectedValueException(sprintf(
                     "%s::reduceMany expects reducer to return an array, but got a '%s' instead.",
-                    static::class, gettype($result)
+                    static::class,
+                    gettype($result)
                 ));
             }
         }

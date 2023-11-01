@@ -21,5 +21,8 @@
         "ext-mbstring": "*",
         "ext-ctype": "*",
         "ramsey/uuid": "^4.7"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.37"
     }
 }

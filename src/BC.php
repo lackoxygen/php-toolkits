@@ -15,8 +15,8 @@ class BC
     public static function sum(
         callable $callback,
         array    $nums = [],
-        int      $scale = 0): string
-    {
+        int      $scale = 0
+    ): string {
         if (count($nums) === 0) {
             return 0;
         }
