@@ -1118,6 +1118,18 @@ class Collection implements ArrayAccess
         return new self($this);
     }
 
+
+    /**
+     * Convert JSON.
+     *
+     * @param int $options
+     * @return string
+     */
+    public function toJson(int $options = 0): string
+    {
+        return json_encode($this->items, $options);
+    }
+
     /**
      * Clears the collection, removing all values.
      *
