@@ -20,7 +20,7 @@
         "php": ">=7.0",
         "ext-mbstring": "*",
         "ext-ctype": "*",
-        "ramsey/uuid": "^4.7"
+        "ramsey/uuid": "^3.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.37"
