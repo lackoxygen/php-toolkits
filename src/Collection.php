@@ -4,8 +4,9 @@ namespace Lackoxygen\Toolkits;
 
 use ArrayAccess;
 use ArrayIterator;
+use Countable;
 
-class Collection implements ArrayAccess
+class Collection implements ArrayAccess, Countable
 {
     /**
      * The items contained in the collection.
@@ -991,6 +992,103 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * Sort the collection using the given callback.
+     *
+     * @param callable|array|string $callback
+     * @param int $options
+     * @param bool $descending
+     * @return static
+     */
+    public function sortBy($callback, int $options = SORT_REGULAR, bool $descending = false): Collection
+    {
+        if (is_array($callback) && !is_callable($callback)) {
+            return $this->sortByMany($callback);
+        }
+
+        $results = [];
+
+        $callback = $this->valueRetriever($callback);
+
+        // First we will loop through the items and get the comparator from a callback
+        // function which we were given. Then, we will sort the returned values and
+        // grab all the corresponding values for the sorted keys from this array.
+        foreach ($this->items as $key => $value) {
+            $results[$key] = $callback($value, $key);
+        }
+
+        $descending ? arsort($results, $options)
+            : asort($results, $options);
+
+        // Once we have sorted all of the keys in the array, we will loop through them
+        // and grab the corresponding model so we can set the underlying items list
+        // to the sorted version. Then we'll just return the collection instance.
+        foreach (array_keys($results) as $key) {
+            $results[$key] = $this->items[$key];
+        }
+
+        return new static($results);
+    }
+
+    /**
+     * Sort the collection using multiple comparisons.
+     *
+     * @param array $comparisons
+     * @return static
+     */
+    protected function sortByMany(array $comparisons = []): Collection
+    {
+        $items = $this->items;
+
+        usort($items, function ($a, $b) use ($comparisons) {
+            foreach ($comparisons as $comparison) {
+                $comparison = Arr::wrap($comparison);
+
+                $prop = $comparison[0];
+
+                $ascending = Arr::get($comparison, 1, true) === true ||
+                    Arr::get($comparison, 1, true) === 'asc';
+
+                if (!is_string($prop) && is_callable($prop)) {
+                    $result = $prop($a, $b);
+                } else {
+                    $values = [Arr::get($a, $prop), Arr::get($b, $prop)];
+
+                    if (!$ascending) {
+                        $values = array_reverse($values);
+                    }
+
+                    $result = $values[0] <=> $values[1];
+                }
+
+                if ($result === 0) {
+                    continue;
+                }
+
+                return $result;
+            }
+        });
+
+        return new static($items);
+    }
+
+    /**
+     * Get a value retrieving callback.
+     *
+     * @param callable|string|null $value
+     * @return callable
+     */
+    protected function valueRetriever($value)
+    {
+        if ($this->useAsCallable($value)) {
+            return $value;
+        }
+
+        return function ($item) use ($value) {
+            return Arr::get($item, $value);
+        };
+    }
+
+    /**
      * Take the first or last {$limit} items.
      *
      * @param int $limit
@@ -1088,7 +1186,6 @@ class Collection implements ArrayAccess
      *
      * @return int
      */
-    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->items);
@@ -1106,6 +1203,273 @@ class Collection implements ArrayAccess
         $this->items[] = $item;
 
         return $this;
+    }
+
+    /**
+     * Clears the collection, removing all values.
+     *
+     * @return void
+     */
+    public function clear()
+    {
+        $this->items = [];
+    }
+
+    /**
+     * Execute a callback over each item.
+     *
+     * @param callable $callback
+     * @return $this
+     */
+    public function each(callable $callback): Collection
+    {
+        foreach ($this as $key => $item) {
+            if ($callback($item, $key) === false) {
+                break;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Execute a callback over each nested chunk of items.
+     *
+     * @param callable $callback
+     * @return static
+     */
+    public function eachSpread(callable $callback): Collection
+    {
+        return $this->each(function ($chunk, $key) use ($callback) {
+            $chunk[] = $key;
+
+            return $callback(...$chunk);
+        });
+    }
+
+    /**
+     * Get the min value of a given key.
+     *
+     * @param callable|string|null $callback
+     * @return mixed
+     */
+    public function min($callback = null)
+    {
+        $callback = $this->valueRetriever($callback);
+
+        return $this->map(function ($value) use ($callback) {
+            return $callback($value);
+        })->filter(function ($value) {
+            return !is_null($value);
+        })->reduce(function ($result, $value) {
+            return is_null($result) || $value < $result ? $value : $result;
+        });
+    }
+
+    /**
+     * Get the max value of a given key.
+     *
+     * @param callable|string|null $callback
+     * @return mixed
+     */
+    public function max($callback = null)
+    {
+        $callback = $this->valueRetriever($callback);
+
+        return $this->filter(function ($value) {
+            return !is_null($value);
+        })->reduce(function ($result, $item) use ($callback) {
+            $value = $callback($item);
+
+            return is_null($result) || $value > $result ? $value : $result;
+        });
+    }
+
+    /**
+     * Pass the collection to the given callback and return the result.
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function pipe(callable $callback)
+    {
+        return $callback($this);
+    }
+
+    /**
+     * Pass the collection into a new class.
+     *
+     * @param string $class
+     * @return mixed
+     */
+    public function pipeInto(string $class)
+    {
+        return new $class($this);
+    }
+
+    /**
+     * Pass the collection through a series of callable pipes and return the result.
+     *
+     * @param array<callable> $pipes
+     * @return mixed
+     */
+    public function pipeThrough(array $pipes)
+    {
+        return static::make($pipes)->reduce(
+            function ($carry, $pipe) {
+                return $pipe($carry);
+            },
+            $this
+        );
+    }
+
+    /**
+     * Pass the collection to the given callback and then return it.
+     *
+     * @param callable $callback
+     * @return $this
+     */
+    public function tap(callable $callback): Collection
+    {
+        $callback(clone $this);
+
+        return $this;
+    }
+
+    /**
+     * Reduce the collection to a single value.
+     *
+     * @param callable $callback
+     * @param mixed $initial
+     * @return mixed
+     */
+    public function reduce(callable $callback, $initial = null)
+    {
+        $result = $initial;
+
+        foreach ($this as $key => $value) {
+            $result = $callback($result, $value, $key);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Reduce the collection to multiple aggregate values.
+     *
+     * @param callable $callback
+     * @param mixed ...$initial
+     * @return array
+     *
+     * @throws \UnexpectedValueException
+     * @deprecated Use "reduceSpread" instead
+     *
+     */
+    public function reduceMany(callable $callback, ...$initial): array
+    {
+        return $this->reduceSpread($callback, ...$initial);
+    }
+
+    /**
+     * Reduce the collection to multiple aggregate values.
+     *
+     * @param callable $callback
+     * @param mixed ...$initial
+     * @return array
+     *
+     * @throws \UnexpectedValueException
+     */
+    public function reduceSpread(callable $callback, ...$initial): array
+    {
+        $result = $initial;
+
+        foreach ($this as $key => $value) {
+            $result = call_user_func_array($callback, array_merge($result, [$value, $key]));
+
+            if (!is_array($result)) {
+                throw new \UnexpectedValueException(sprintf(
+                    "%s::reduceMany expects reducer to return an array, but got a '%s' instead.",
+                    static::class, gettype($result)
+                ));
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Reduce an associative collection to a single value.
+     *
+     * @param callable $callback
+     * @param mixed $initial
+     * @return mixed
+     */
+    public function reduceWithKeys(callable $callback, $initial = null)
+    {
+        return $this->reduce($callback, $initial);
+    }
+
+    /**
+     * Create a collection of all elements that do not pass a given truth test.
+     *
+     * @param callable|mixed $callback
+     * @return static
+     */
+    public function reject($callback = true): Collection
+    {
+        $useAsCallable = $this->useAsCallable($callback);
+
+        return $this->filter(function ($value, $key) use ($callback, $useAsCallable) {
+            return $useAsCallable
+                ? !$callback($value, $key)
+                : $value != $callback;
+        });
+    }
+
+    /**
+     * Return only unique items from the collection array.
+     *
+     * @param string|callable|null $key
+     * @param bool $strict
+     * @return static
+     */
+    public function unique($key = null, bool $strict = false): Collection
+    {
+        if (is_null($key) && $strict === false) {
+            return new static(array_unique($this->items, SORT_REGULAR));
+        }
+
+        $callback = $this->valueRetriever($key);
+
+        $exists = [];
+
+        return $this->reject(function ($item, $key) use ($callback, $strict, &$exists) {
+            if (in_array($id = $callback($item, $key), $exists, $strict)) {
+                return true;
+            }
+
+            $exists[] = $id;
+        });
+    }
+
+    /**
+     * Get the collection of items as a plain array.
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return $this->all();
+    }
+
+    /**
+     * Convert the collection to its string representation
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->toJson();
     }
 
     /**
@@ -1131,22 +1495,11 @@ class Collection implements ArrayAccess
     }
 
     /**
-     * Clears the collection, removing all values.
-     *
-     * @return void
-     */
-    public function clear()
-    {
-        $this->items = [];
-    }
-
-    /**
      * Determine if an item exists at an offset.
      *
      * @param mixed $key
      * @return bool
      */
-    #[\ReturnTypeWillChange]
     public function offsetExists($key)
     {
         return isset($this->items[$key]);
@@ -1158,7 +1511,6 @@ class Collection implements ArrayAccess
      * @param mixed $key
      * @return mixed
      */
-    #[\ReturnTypeWillChange]
     public function offsetGet($key)
     {
         return $this->items[$key];
@@ -1171,7 +1523,6 @@ class Collection implements ArrayAccess
      * @param mixed $value
      * @return void
      */
-    #[\ReturnTypeWillChange]
     public function offsetSet($key, $value)
     {
         if (is_null($key)) {
@@ -1187,9 +1538,33 @@ class Collection implements ArrayAccess
      * @param mixed $key
      * @return void
      */
-    #[\ReturnTypeWillChange]
     public function offsetUnset($key)
     {
         unset($this->items[$key]);
+    }
+
+    public function current()
+    {
+        // TODO: Implement current() method.
+    }
+
+    public function next()
+    {
+        // TODO: Implement next() method.
+    }
+
+    public function key()
+    {
+        // TODO: Implement key() method.
+    }
+
+    public function valid()
+    {
+        // TODO: Implement valid() method.
+    }
+
+    public function rewind()
+    {
+        // TODO: Implement rewind() method.
     }
 }

@@ -2,8 +2,6 @@
 
 namespace Lackoxygen\Toolkits;
 
-use Illuminate\Support\Collection;
-
 class Arr
 {
     /**
@@ -100,7 +98,7 @@ class Arr
      * @param iterable $array
      * @return array
      */
-    public static function unDot($array): array
+    public static function undot($array): array
     {
         $results = [];
 
@@ -414,8 +412,6 @@ class Arr
     {
         $results = [];
 
-        list($value, $key) = static::explodePluckParameters($value, $key);
-
         foreach ($array as $item) {
             $itemValue = static::get($item, $value);
 
@@ -703,7 +699,7 @@ class Arr
     /**
      * Collapse an array of arrays into a single array.
      *
-     * @param  iterable  $array
+     * @param iterable $array
      * @return array
      */
     public static function collapse($array): array
@@ -713,7 +709,7 @@ class Arr
         foreach ($array as $values) {
             if ($values instanceof Collection) {
                 $values = $values->all();
-            } elseif (! is_array($values)) {
+            } elseif (!is_array($values)) {
                 continue;
             }
 
