@@ -2,6 +2,9 @@
 
 namespace Lackoxygen\Toolkits;
 
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
+
 class Str
 {
     /**
@@ -589,36 +592,6 @@ class Str
     }
 
     /**
-     * Convert the given string to title case.
-     *
-     * @param string $value
-     * @return string
-     */
-    public static function title(string $value): string
-    {
-        return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
-    }
-
-    /**
-     * Convert the given string to title case for each word.
-     *
-     * @param string $value
-     * @return string
-     */
-    public static function headline(string $value): string
-    {
-        $parts = explode(' ', $value);
-
-        $parts = count($parts) > 1
-            ? array_map([static::class, 'title'], $parts)
-            : array_map([static::class, 'title'], static::ucsplit(implode('_', $parts)));
-
-        $collapsed = static::replace(['-', '_', ' '], '_', implode('_', $parts));
-
-        return implode(' ', array_filter(explode('_', $collapsed)));
-    }
-
-    /**
      * Convert a string to snake case.
      *
      * @param string $value
@@ -867,10 +840,19 @@ class Str
      * @param string $string
      * @return array|string|string[]|null
      */
-    public static function replaceWhitespace(string $string)
+    public static function replaceBlank(string $string)
     {
         $regex = '/[ \n\t]+/';
 
         return preg_replace($regex, '', $string);
+    }
+
+    /**
+     * Generate a UUID (version 4).
+     * @return UuidInterface
+     */
+    public static function uuid(): UuidInterface
+    {
+        return Uuid::uuid4();
     }
 }
