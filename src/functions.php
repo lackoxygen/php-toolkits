@@ -1,6 +1,6 @@
 <?php
 
-use Lackoxygen\Toolkits\Collection;
+namespace Lackoxygen\Toolkits;
 
 if (!function_exists('collect')) {
     /**
